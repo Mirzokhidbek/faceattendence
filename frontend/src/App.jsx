@@ -73,11 +73,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing Page (Screen 1 in reference mockup) */}
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
-        />
+        {/* Main / Landing Page (Screen 1 in reference mockup) */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={<ProtectedLayout />} />

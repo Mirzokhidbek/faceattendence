@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartcheck_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://smartcheck_user:smartcheck_password@db:5432/smartcheck_db
+      - JWT_SECRET=production-secret-key-change-in-prod-2026
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - FACE_MATCH_THRESHOLD=0.40
+      - LATE_GRACE_MINUTES=15
+      - CORS_ORIGINS=["http://localhost","http://localhost:5173","http://localhost:80"]
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/app/models_weights:/app/app/models_weights
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smartcheck_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15-alpine
+    container_name: smartcheck_postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=smartcheck_user
+      - POSTGRES_PASSWORD=smartcheck_password
+      - POSTGRES_DB=smartcheck_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcheck_user -d smartcheck_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

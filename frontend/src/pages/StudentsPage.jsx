@@ -70,10 +70,10 @@ export default function StudentsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Students
+            Employees
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Total {total} students enrolled in the system
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Total {total} members enrolled in the face attendance system
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function StudentsPage() {
           className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Add Student</span>
+          <span>Add Employee</span>
         </button>
       </div>
 

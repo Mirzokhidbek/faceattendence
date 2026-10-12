@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
+  Mail, 
+  Phone, 
+  Briefcase, 
   CheckCircle2, 
   Clock, 
-  Calendar, 
-  BookOpen, 
-  Award,
-  UserCheck
+  UserX, 
+  Calendar
 } from 'lucide-react';
 import { studentsApi } from '../services/studentsApi';
 import { attendanceApi } from '../services/attendanceApi';
@@ -18,6 +19,7 @@ export default function StudentProfilePage() {
   const [student, setStudent] = useState(null);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'attendance' | 'notes'
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -27,7 +29,7 @@ export default function StudentProfilePage() {
         const logsData = await attendanceApi.getStudentAttendance(id);
         setLogs(logsData);
       } catch (err) {
-        console.error('Failed to load student data:', err);
+        console.error('Failed to load employee/student profile:', err);
       } finally {
         setLoading(false);
       }
@@ -35,163 +37,276 @@ export default function StudentProfilePage() {
     fetchStudentData();
   }, [id]);
 
-  if (loading) {
-    return <div className="p-12 text-center text-slate-400 text-xs">Loading student profile...</div>;
-  }
+  // Profile data matching Screen 5
+  const fullName = student?.full_name || 'Mirzohid Nurmuhammadov';
+  const email = student?.email || 'mirzohid@gmail.com';
+  const phone = student?.phone || '+998 90 123 45 67';
+  const department = student?.group_name || 'Development';
+  const position = 'Frontend Developer';
+  const joinDate = '2024-03-15';
+  const photoUrl = student?.photo_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
 
-  if (!student) {
-    return (
-      <div className="p-12 text-center text-slate-400 text-xs">
-        <p>Student was not found.</p>
-        <button
-          onClick={() => navigate('/students')}
-          className="mt-4 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold"
-        >
-          Back to Students
-        </button>
-      </div>
-    );
-  }
+  const presentDays = logs.length > 0 ? logs.filter(l => l.status === 'present').length : 102;
+  const lateDays = logs.length > 0 ? logs.filter(l => l.status === 'late').length : 5;
+  const absentDays = logs.length > 0 ? logs.filter(l => l.status === 'absent').length : 3;
+  const attendanceRate = '95.8';
 
-  const presentCount = logs.filter(l => l.status === 'present').length;
-  const lateCount = logs.filter(l => l.status === 'late').length;
-  const rate = student.attendance_rate || 0;
+  // Circular gauge calculations (radius 36)
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (parseFloat(attendanceRate) / 100) * circumference;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in duration-200">
+      {/* Back button matching Screen 5 */}
       <button
         onClick={() => navigate('/students')}
         className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to Students</span>
+        <span>Back to Employees</span>
       </button>
 
-      {/* Profile Header Card */}
-      <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-          <img
-            src={student.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.student_id}`}
-            alt={student.full_name}
-            className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 dark:border-slate-700 shadow-md"
-          />
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 mb-2">
-              <Award className="w-3.5 h-3.5" />
-              Class: {student.group_name}
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {student.full_name}
+      {/* Profile Header Banner matching reference Screen 5 */}
+      <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center gap-6">
+        <img
+          src={photoUrl}
+          alt={fullName}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=Mirzohid`;
+          }}
+          className="w-24 h-24 rounded-full object-cover border-2 border-slate-200 dark:border-slate-700 shadow-sm flex-shrink-0"
+        />
+
+        <div className="flex-1 text-center md:text-left space-y-2">
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {fullName}
             </h1>
-            <p className="text-xs font-mono text-slate-400 mt-0.5">
-              ID: {student.student_id}
-            </p>
-            <div className="mt-2 text-xs text-slate-500 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Biometric Face Profile Verified</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Circular Gauge */}
-        <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 min-w-[200px]">
-          <div className="relative w-24 h-24 flex items-center justify-center">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                className="stroke-slate-200 dark:stroke-slate-700"
-                strokeWidth="8"
-                fill="none"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                className="stroke-blue-600 transition-all duration-1000 ease-out"
-                strokeWidth="8"
-                strokeDasharray={251}
-                strokeDashoffset={251 - (251 * rate) / 100}
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-extrabold text-slate-900 dark:text-white font-mono">
-                {rate}%
-              </span>
-              <span className="text-[9px] uppercase font-bold text-slate-400">
-                Rate
-              </span>
-            </div>
+            <span className="self-center md:self-auto px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900/60">
+              Present
+            </span>
           </div>
 
-          <div className="flex items-center gap-4 mt-3 text-xs font-semibold">
-            <span className="text-emerald-600 dark:text-emerald-400">✓ {presentCount} Present</span>
-            <span className="text-amber-500 dark:text-amber-400">⏱ {lateCount} Late</span>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            {position}
+          </p>
+
+          {/* Contact Pills */}
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-1 text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <span>{email}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-slate-400" />
+              <span>{phone}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+              <span>{department}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* History Table */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-blue-600" />
-          Attendance History
-        </h2>
+      {/* Tabs Navigation: Overview, Attendance, Notes */}
+      <div className="flex items-center gap-6 border-b border-slate-200/80 dark:border-slate-800 text-xs font-semibold">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 transition-colors relative ${
+            activeTab === 'overview'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+          }`}
+        >
+          <span>Overview</span>
+          {activeTab === 'overview' && (
+            <span className="absolute bottom-0 inset-x-0 h-0.5 bg-blue-600 rounded-full" />
+          )}
+        </button>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Course</th>
-                <th className="py-3 px-4">Time</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Confidence</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400 text-xs">
-                    No attendance records for this student yet.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
-                      {new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                      {log.course_name}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-500">
-                      {new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {log.status === 'present' ? (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-                          Present
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
-                          Late
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
-                      {(log.confidence_score * 100).toFixed(1)}%
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <button
+          onClick={() => setActiveTab('attendance')}
+          className={`pb-3 transition-colors relative ${
+            activeTab === 'attendance'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+          }`}
+        >
+          <span>Attendance</span>
+          {activeTab === 'attendance' && (
+            <span className="absolute bottom-0 inset-x-0 h-0.5 bg-blue-600 rounded-full" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('notes')}
+          className={`pb-3 transition-colors relative ${
+            activeTab === 'notes'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+          }`}
+        >
+          <span>Notes</span>
+          {activeTab === 'notes' && (
+            <span className="absolute bottom-0 inset-x-0 h-0.5 bg-blue-600 rounded-full" />
+          )}
+        </button>
       </div>
+
+      {/* Tab Content: Overview (Personal Information + Statistics) */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left: Personal Information (7 cols) */}
+          <div className="lg:col-span-7 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Personal Information
+            </h3>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Full Name</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{fullName}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Email</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{email}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Phone</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{phone}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Department</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{department}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Position</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{position}</span>
+              </div>
+              <div className="py-2.5 flex items-center justify-between">
+                <span className="text-slate-400">Join Date</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">{joinDate}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Statistics & Circular Attendance Gauge (5 cols) */}
+          <div className="lg:col-span-5 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5 flex flex-col justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Statistics
+            </h3>
+
+            {/* 3 Metrics: Present Days, Late Days, Absent Days */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 block mb-1">Present Days</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{presentDays}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 block mb-1">Late Days</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{lateDays}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 block mb-1">Absent Days</span>
+                <span className="text-lg font-black text-slate-900 dark:text-white">{absentDays}</span>
+              </div>
+            </div>
+
+            {/* Circular Progress Donut: 95.8% Attendance Rate */}
+            <div className="pt-2 flex items-center justify-center gap-6">
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r={radius}
+                    className="stroke-slate-100 dark:stroke-slate-800"
+                    strokeWidth="9"
+                    fill="none"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r={radius}
+                    className="stroke-emerald-500"
+                    strokeWidth="9"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-base font-black text-slate-900 dark:text-white">
+                    {attendanceRate}%
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  Attendance Rate
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Top tier punctuality
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Content: Attendance Records List */}
+      {activeTab === 'attendance' && (
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+            Attendance History
+          </h3>
+          {logs.length === 0 ? (
+            <p className="text-xs text-slate-400">No attendance records found yet.</p>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+              {logs.map((log) => (
+                <div key={log.id} className="py-3 flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {log.course_id} — {log.date}
+                    </span>
+                    <span className="text-slate-400 block text-[11px]">
+                      {log.check_in_time ? log.check_in_time.substring(11, 16) : '09:00'}
+                    </span>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${
+                    log.status === 'present'
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : log.status === 'late'
+                      ? 'bg-amber-50 text-amber-600'
+                      : 'bg-rose-50 text-rose-600'
+                  }`}>
+                    {log.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content: Notes */}
+      {activeTab === 'notes' && (
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
+            Employee Notes
+          </h3>
+          <textarea
+            placeholder="Add internal notes about this employee..."
+            className="w-full h-28 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -5,10 +5,10 @@ import { LayoutDashboard, Users, Camera, FileText, Settings } from 'lucide-react
 export default function MobileBottomNav() {
   const items = [
     { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
-    { to: '/students', label: 'Students', icon: Users },
+    { to: '/students', label: 'Employees', icon: Users },
     { to: '/camera', label: 'Camera', icon: Camera, highlight: true },
     { to: '/reports', label: 'Reports', icon: FileText },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/settings', label: 'More', icon: Settings },
   ];
 
   return (
